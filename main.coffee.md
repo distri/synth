@@ -4,7 +4,7 @@ Synth
 Synthesizing sound using web audio and crying about it.
 
     require "./setup"
-    {log, E:e, pow} = Math
+    {pow} = Math
 
     context = new AudioContext
 
