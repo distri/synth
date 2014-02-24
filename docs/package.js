@@ -18,7 +18,7 @@
     "main.coffee.md": {
       "path": "main.coffee.md",
       "mode": "100644",
-      "content": "Synth\n=====\n\nSynthesizing sound using web audio and crying about it.\n\n    require \"./setup\"\n    {log, E:e, pow} = Math\n\n    context = new AudioContext\n\n    vco = context.createOscillator()\n    vco.frequency.value = 440\n    vco.start(0)\n\n    vca = context.createGain()\n    vca.gain.value = 0.0\n\n    vco.connect(vca)\n    vca.connect(context.destination)\n\n    freq = (x) ->\n      220 * pow(2, x)\n\n    handler = (e) ->\n      vco.frequency.value = freq( e.pageX / innerWidth)\n      vca.gain.value = 1 - (e.pageY / innerHeight)\n\n    document.addEventListener \"mousedown\", handler, false\n    document.addEventListener \"mousemove\", handler, false\n",
+      "content": "Synth\n=====\n\nSynthesizing sound using web audio and crying about it.\n\n    require \"./setup\"\n    {pow} = Math\n\n    context = new AudioContext\n\n    vco = context.createOscillator()\n    vco.frequency.value = 440\n    vco.start(0)\n\n    vca = context.createGain()\n    vca.gain.value = 0.0\n\n    vco.connect(vca)\n    vca.connect(context.destination)\n\n    freq = (x) ->\n      220 * pow(2, x)\n\n    handler = (e) ->\n      vco.frequency.value = freq( e.pageX / innerWidth)\n      vca.gain.value = 1 - (e.pageY / innerHeight)\n\n    document.addEventListener \"mousedown\", handler, false\n    document.addEventListener \"mousemove\", handler, false\n",
       "type": "blob"
     },
     "setup.coffee.md": {
@@ -37,7 +37,7 @@
   "distribution": {
     "main": {
       "path": "main",
-      "content": "(function() {\n  var context, e, freq, handler, log, pow, vca, vco;\n\n  require(\"./setup\");\n\n  log = Math.log, e = Math.E, pow = Math.pow;\n\n  context = new AudioContext;\n\n  vco = context.createOscillator();\n\n  vco.frequency.value = 440;\n\n  vco.start(0);\n\n  vca = context.createGain();\n\n  vca.gain.value = 0.0;\n\n  vco.connect(vca);\n\n  vca.connect(context.destination);\n\n  freq = function(x) {\n    return 220 * pow(2, x);\n  };\n\n  handler = function(e) {\n    vco.frequency.value = freq(e.pageX / innerWidth);\n    return vca.gain.value = 1 - (e.pageY / innerHeight);\n  };\n\n  document.addEventListener(\"mousedown\", handler, false);\n\n  document.addEventListener(\"mousemove\", handler, false);\n\n}).call(this);\n\n//# sourceURL=main.coffee",
+      "content": "(function() {\n  var context, freq, handler, pow, vca, vco;\n\n  require(\"./setup\");\n\n  pow = Math.pow;\n\n  context = new AudioContext;\n\n  vco = context.createOscillator();\n\n  vco.frequency.value = 440;\n\n  vco.start(0);\n\n  vca = context.createGain();\n\n  vca.gain.value = 0.0;\n\n  vco.connect(vca);\n\n  vca.connect(context.destination);\n\n  freq = function(x) {\n    return 220 * pow(2, x);\n  };\n\n  handler = function(e) {\n    vco.frequency.value = freq(e.pageX / innerWidth);\n    return vca.gain.value = 1 - (e.pageY / innerHeight);\n  };\n\n  document.addEventListener(\"mousedown\", handler, false);\n\n  document.addEventListener(\"mousemove\", handler, false);\n\n}).call(this);\n\n//# sourceURL=main.coffee",
       "type": "blob"
     },
     "setup": {
