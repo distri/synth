@@ -15,7 +15,7 @@ window["distri/synth:master"]({
     "main.coffee.md": {
       "path": "main.coffee.md",
       "mode": "100644",
-      "content": "Synth\n=====\n\nSynthesizing sound using web audio and crying about it.\n\n    require \"./setup\"\n    LFO = require \"./lfo\"\n    {pow} = Math\n\n    global.context = new AudioContext\n\n    masterGain = context.createGain()\n    masterGain.gain.value = 0.1\n    masterGain.connect(context.destination)\n\n    vco = context.createOscillator()\n    vco.start(0)\n    vco.type = vco.SQUARE\n    \n    # Vibrato Effect\n    LFO(vco.frequency, 7, 10)\n\n    vca = context.createGain()\n    vca.gain.value = 0.0\n\n    # Tremolo Effect\n    LFO(masterGain.gain, 11, 0.01)\n\n    vco.connect(vca)\n    vca.connect(masterGain)\n\n    freq = (x) ->\n      220 * pow(2, x)\n\n    handler = (e) ->\n      vco.frequency.value = freq( e.pageX / innerWidth)\n      vca.gain.value = 1 - (e.pageY / innerHeight)\n\n    document.addEventListener \"mousedown\", handler, false\n    document.addEventListener \"mousemove\", handler, false\n",
+      "content": "Synth\n=====\n\nSynthesizing sound using web audio and crying about it.\n\n    require \"./setup\"\n    LFO = require \"./lfo\"\n    Bank = require \"./osc_bank\"\n    {pow} = Math\n\n    global.context = new AudioContext\n\n    masterGain = context.createGain()\n    masterGain.gain.value = 0.1\n    masterGain.connect(context.destination)\n\n    vco = context.createOscillator()\n    vco.start(0)\n    vco.type = vco.TRIANGLE\n\n    # vco = Bank()\n\n    # FM Effect\n    # LFO(vco.frequency, 61, 1000)\n\n    # Vibrato Effect\n    # LFO(vco.frequency, 7, 10)\n\n    vca = context.createGain()\n    vca.gain.value = 0.0\n\n    # Tremolo Effect\n    # LFO(masterGain.gain, 10, 0.01)\n\n    vco.connect(vca)\n    vca.connect(masterGain)\n\n    freq = (x) ->\n      220 * pow(2, x)\n\n    handler = (e) ->\n      vco.frequency.value = freq( e.pageX / innerWidth)\n      vca.gain.value = 1 - (e.pageY / innerHeight)\n\n    document.addEventListener \"mousedown\", handler, false\n    document.addEventListener \"mousemove\", handler, false\n",
       "type": "blob"
     },
     "setup.coffee.md": {
@@ -35,12 +35,18 @@ window["distri/synth:master"]({
       "mode": "100644",
       "content": "LFO Testing\n===========\n\n    module.exports = (target, frequency=10, amplitude=0.05) ->\n      lfo = context.createOscillator()\n      lfo.frequency.value = frequency\n      lfo.type = lfo.SINE\n      lfo.start(0)\n  \n      lfoGain = context.createGain()\n      lfoGain.gain.value = amplitude\n\n      lfo.connect(lfoGain)\n      lfoGain.connect(target)\n",
       "type": "blob"
+    },
+    "osc_bank.coffee.md": {
+      "path": "osc_bank.coffee.md",
+      "mode": "100644",
+      "content": "OSC Bank\n========\n\nA bank of oscillators\n\nTODO: Figure out how to have a single frequency input control all harmonics.\n\n    module.exports = ->\n      line = context.createOscillator()\n      line.frequency.value = 0\n      line.type = line.SQUARE\n      line.start(0)\n\n      fundamental = context.createGain()\n      fundamental.gain.value = 220\n\n      line.connect(fundamental)\n\n      out = context.createGain()\n      out.gain.value = 1\n\n      oscs = [0..4].map (n) ->\n        overtone = context.createGain()\n        overtone.gain.value = n\n\n        fundamental.connect(overtone)\n\n        osc = context.createOscillator()\n        osc.start(0)\n        osc.frequency.value = 220 * n # Math.pow(2, n)\n        osc.type = osc.SINE\n\n        overtone.connect(osc.frequency)\n\n        gain = context.createGain()\n        gain.gain.value = 1 / Math.pow(2, n)\n        osc.connect(gain)\n        gain.connect(out)\n\n      frequency: fundamental.gain\n      connect: (destination) ->\n        out.connect(destination)\n",
+      "type": "blob"
     }
   },
   "distribution": {
     "main": {
       "path": "main",
-      "content": "(function() {\n  var LFO, freq, handler, masterGain, pow, vca, vco;\n\n  require(\"./setup\");\n\n  LFO = require(\"./lfo\");\n\n  pow = Math.pow;\n\n  global.context = new AudioContext;\n\n  masterGain = context.createGain();\n\n  masterGain.gain.value = 0.1;\n\n  masterGain.connect(context.destination);\n\n  vco = context.createOscillator();\n\n  vco.start(0);\n\n  vco.type = vco.SQUARE;\n\n  LFO(vco.frequency, 7, 10);\n\n  vca = context.createGain();\n\n  vca.gain.value = 0.0;\n\n  LFO(masterGain.gain, 11, 0.01);\n\n  vco.connect(vca);\n\n  vca.connect(masterGain);\n\n  freq = function(x) {\n    return 220 * pow(2, x);\n  };\n\n  handler = function(e) {\n    vco.frequency.value = freq(e.pageX / innerWidth);\n    return vca.gain.value = 1 - (e.pageY / innerHeight);\n  };\n\n  document.addEventListener(\"mousedown\", handler, false);\n\n  document.addEventListener(\"mousemove\", handler, false);\n\n}).call(this);\n\n//# sourceURL=main.coffee",
+      "content": "(function() {\n  var Bank, LFO, freq, handler, masterGain, pow, vca, vco;\n\n  require(\"./setup\");\n\n  LFO = require(\"./lfo\");\n\n  Bank = require(\"./osc_bank\");\n\n  pow = Math.pow;\n\n  global.context = new AudioContext;\n\n  masterGain = context.createGain();\n\n  masterGain.gain.value = 0.1;\n\n  masterGain.connect(context.destination);\n\n  vco = context.createOscillator();\n\n  vco.start(0);\n\n  vco.type = vco.TRIANGLE;\n\n  vca = context.createGain();\n\n  vca.gain.value = 0.0;\n\n  vco.connect(vca);\n\n  vca.connect(masterGain);\n\n  freq = function(x) {\n    return 220 * pow(2, x);\n  };\n\n  handler = function(e) {\n    vco.frequency.value = freq(e.pageX / innerWidth);\n    return vca.gain.value = 1 - (e.pageY / innerHeight);\n  };\n\n  document.addEventListener(\"mousedown\", handler, false);\n\n  document.addEventListener(\"mousemove\", handler, false);\n\n}).call(this);\n\n//# sourceURL=main.coffee",
       "type": "blob"
     },
     "setup": {
@@ -56,6 +62,11 @@ window["distri/synth:master"]({
     "lfo": {
       "path": "lfo",
       "content": "(function() {\n  module.exports = function(target, frequency, amplitude) {\n    var lfo, lfoGain;\n    if (frequency == null) {\n      frequency = 10;\n    }\n    if (amplitude == null) {\n      amplitude = 0.05;\n    }\n    lfo = context.createOscillator();\n    lfo.frequency.value = frequency;\n    lfo.type = lfo.SINE;\n    lfo.start(0);\n    lfoGain = context.createGain();\n    lfoGain.gain.value = amplitude;\n    lfo.connect(lfoGain);\n    return lfoGain.connect(target);\n  };\n\n}).call(this);\n\n//# sourceURL=lfo.coffee",
+      "type": "blob"
+    },
+    "osc_bank": {
+      "path": "osc_bank",
+      "content": "(function() {\n  module.exports = function() {\n    var fundamental, line, oscs, out;\n    line = context.createOscillator();\n    line.frequency.value = 0;\n    line.type = line.SQUARE;\n    line.start(0);\n    fundamental = context.createGain();\n    fundamental.gain.value = 220;\n    line.connect(fundamental);\n    out = context.createGain();\n    out.gain.value = 1;\n    oscs = [0, 1, 2, 3, 4].map(function(n) {\n      var gain, osc, overtone;\n      overtone = context.createGain();\n      overtone.gain.value = n;\n      fundamental.connect(overtone);\n      osc = context.createOscillator();\n      osc.start(0);\n      osc.frequency.value = 220 * n;\n      osc.type = osc.SINE;\n      overtone.connect(osc.frequency);\n      gain = context.createGain();\n      gain.gain.value = 1 / Math.pow(2, n);\n      osc.connect(gain);\n      return gain.connect(out);\n    });\n    return {\n      frequency: fundamental.gain,\n      connect: function(destination) {\n        return out.connect(destination);\n      }\n    };\n  };\n\n}).call(this);\n\n//# sourceURL=osc_bank.coffee",
       "type": "blob"
     }
   },

@@ -37,6 +37,7 @@
             </div>
             <div class="content"><pre><code class="lang-coffeescript">require <span class="string">"./setup"</span>
 LFO = require <span class="string">"./lfo"</span>
+Bank = require <span class="string">"./osc_bank"</span>
 {pow} = Math
 
 global.context = <span class="keyword">new</span> AudioContext
@@ -47,16 +48,21 @@ masterGain.connect(context.destination)
 
 vco = context.createOscillator()
 vco.start(<span class="number">0</span>)
-vco.type = vco.SQUARE
+vco.type = vco.TRIANGLE
+
+<span class="comment"># vco = Bank()</span>
+
+<span class="comment"># FM Effect</span>
+<span class="comment"># LFO(vco.frequency, 61, 1000)</span>
 
 <span class="comment"># Vibrato Effect</span>
-LFO(vco.frequency, <span class="number">7</span>, <span class="number">10</span>)
+<span class="comment"># LFO(vco.frequency, 7, 10)</span>
 
 vca = context.createGain()
 vca.gain.value = <span class="number">0.0</span>
 
 <span class="comment"># Tremolo Effect</span>
-LFO(masterGain.gain, <span class="number">11</span>, <span class="number">0.01</span>)
+<span class="comment"># LFO(masterGain.gain, 10, 0.01)</span>
 
 vco.connect(vca)
 vca.connect(masterGain)
