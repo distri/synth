@@ -15,7 +15,7 @@ window["distri/synth:master"]({
     "main.coffee.md": {
       "path": "main.coffee.md",
       "mode": "100644",
-      "content": "Synth\n=====\n\nSynthesizing sound using web audio and crying about it.\n\n    require \"./setup\"\n    {pow} = Math\n\n    context = new AudioContext\n\n    vco = context.createOscillator()\n    vco.frequency.value = 440\n    vco.start(0)\n\n    vca = context.createGain()\n    vca.gain.value = 0.0\n\n    vco.connect(vca)\n    vca.connect(context.destination)\n\n    freq = (x) ->\n      220 * pow(2, x)\n\n    handler = (e) ->\n      vco.frequency.value = freq( e.pageX / innerWidth)\n      vca.gain.value = 1 - (e.pageY / innerHeight)\n\n    document.addEventListener \"mousedown\", handler, false\n    document.addEventListener \"mousemove\", handler, false\n",
+      "content": "Synth\n=====\n\nSynthesizing sound using web audio and crying about it.\n\n    require \"./setup\"\n    LFO = require \"./lfo\"\n    {pow} = Math\n\n    global.context = new AudioContext\n\n    masterGain = context.createGain()\n    masterGain.gain.value = 0.1\n    masterGain.connect(context.destination)\n\n    vco = context.createOscillator()\n    vco.start(0)\n    vco.type = vco.SQUARE\n    \n    # Vibrato Effect\n    LFO(vco.frequency, 7, 10)\n\n    vca = context.createGain()\n    vca.gain.value = 0.0\n\n    # Tremolo Effect\n    LFO(masterGain.gain, 11, 0.01)\n\n    vco.connect(vca)\n    vca.connect(masterGain)\n\n    freq = (x) ->\n      220 * pow(2, x)\n\n    handler = (e) ->\n      vco.frequency.value = freq( e.pageX / innerWidth)\n      vca.gain.value = 1 - (e.pageY / innerHeight)\n\n    document.addEventListener \"mousedown\", handler, false\n    document.addEventListener \"mousemove\", handler, false\n",
       "type": "blob"
     },
     "setup.coffee.md": {
@@ -29,12 +29,18 @@ window["distri/synth:master"]({
       "mode": "100644",
       "content": "width: 320\nheight: 180\n",
       "type": "blob"
+    },
+    "lfo.coffee.md": {
+      "path": "lfo.coffee.md",
+      "mode": "100644",
+      "content": "LFO Testing\n===========\n\n    module.exports = (target, frequency=10, amplitude=0.05) ->\n      lfo = context.createOscillator()\n      lfo.frequency.value = frequency\n      lfo.type = lfo.SINE\n      lfo.start(0)\n  \n      lfoGain = context.createGain()\n      lfoGain.gain.value = amplitude\n\n      lfo.connect(lfoGain)\n      lfoGain.connect(target)\n",
+      "type": "blob"
     }
   },
   "distribution": {
     "main": {
       "path": "main",
-      "content": "(function() {\n  var context, freq, handler, pow, vca, vco;\n\n  require(\"./setup\");\n\n  pow = Math.pow;\n\n  context = new AudioContext;\n\n  vco = context.createOscillator();\n\n  vco.frequency.value = 440;\n\n  vco.start(0);\n\n  vca = context.createGain();\n\n  vca.gain.value = 0.0;\n\n  vco.connect(vca);\n\n  vca.connect(context.destination);\n\n  freq = function(x) {\n    return 220 * pow(2, x);\n  };\n\n  handler = function(e) {\n    vco.frequency.value = freq(e.pageX / innerWidth);\n    return vca.gain.value = 1 - (e.pageY / innerHeight);\n  };\n\n  document.addEventListener(\"mousedown\", handler, false);\n\n  document.addEventListener(\"mousemove\", handler, false);\n\n}).call(this);\n\n//# sourceURL=main.coffee",
+      "content": "(function() {\n  var LFO, freq, handler, masterGain, pow, vca, vco;\n\n  require(\"./setup\");\n\n  LFO = require(\"./lfo\");\n\n  pow = Math.pow;\n\n  global.context = new AudioContext;\n\n  masterGain = context.createGain();\n\n  masterGain.gain.value = 0.1;\n\n  masterGain.connect(context.destination);\n\n  vco = context.createOscillator();\n\n  vco.start(0);\n\n  vco.type = vco.SQUARE;\n\n  LFO(vco.frequency, 7, 10);\n\n  vca = context.createGain();\n\n  vca.gain.value = 0.0;\n\n  LFO(masterGain.gain, 11, 0.01);\n\n  vco.connect(vca);\n\n  vca.connect(masterGain);\n\n  freq = function(x) {\n    return 220 * pow(2, x);\n  };\n\n  handler = function(e) {\n    vco.frequency.value = freq(e.pageX / innerWidth);\n    return vca.gain.value = 1 - (e.pageY / innerHeight);\n  };\n\n  document.addEventListener(\"mousedown\", handler, false);\n\n  document.addEventListener(\"mousemove\", handler, false);\n\n}).call(this);\n\n//# sourceURL=main.coffee",
       "type": "blob"
     },
     "setup": {
@@ -45,6 +51,11 @@ window["distri/synth:master"]({
     "pixie": {
       "path": "pixie",
       "content": "module.exports = {\"width\":320,\"height\":180};",
+      "type": "blob"
+    },
+    "lfo": {
+      "path": "lfo",
+      "content": "(function() {\n  module.exports = function(target, frequency, amplitude) {\n    var lfo, lfoGain;\n    if (frequency == null) {\n      frequency = 10;\n    }\n    if (amplitude == null) {\n      amplitude = 0.05;\n    }\n    lfo = context.createOscillator();\n    lfo.frequency.value = frequency;\n    lfo.type = lfo.SINE;\n    lfo.start(0);\n    lfoGain = context.createGain();\n    lfoGain.gain.value = amplitude;\n    lfo.connect(lfoGain);\n    return lfoGain.connect(target);\n  };\n\n}).call(this);\n\n//# sourceURL=lfo.coffee",
       "type": "blob"
     }
   },
