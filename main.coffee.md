@@ -5,6 +5,7 @@ Synthesizing sound using web audio and crying about it.
 
     require "./setup"
     LFO = require "./lfo"
+    Bank = require "./osc_bank"
     {pow} = Math
 
     global.context = new AudioContext
@@ -15,16 +16,21 @@ Synthesizing sound using web audio and crying about it.
 
     vco = context.createOscillator()
     vco.start(0)
-    vco.type = vco.SQUARE
-    
+    vco.type = vco.TRIANGLE
+
+    # vco = Bank()
+
+    # FM Effect
+    # LFO(vco.frequency, 61, 1000)
+
     # Vibrato Effect
-    LFO(vco.frequency, 7, 10)
+    # LFO(vco.frequency, 7, 10)
 
     vca = context.createGain()
     vca.gain.value = 0.0
 
     # Tremolo Effect
-    LFO(masterGain.gain, 11, 0.01)
+    # LFO(masterGain.gain, 10, 0.01)
 
     vco.connect(vca)
     vca.connect(masterGain)
