@@ -117,11 +117,14 @@ analyser = context.createAnalyser()
 analyser.smoothingTimeConstant = <span class="number">0</span>
 masterGain.connect(analyser)
 
+frequencyDomain = <span class="keyword">new</span> Uint8Array(analyser.frequencyBinCount)
+timeDomain = <span class="keyword">new</span> Uint8Array(analyser.frequencyBinCount)
+
 setInterval -&gt;
   canvas.fill <span class="string">"black"</span>
 
-  frequencyDomain = <span class="keyword">new</span> Uint8Array(analyser.frequencyBinCount)
   analyser.getByteFrequencyData(frequencyDomain)
+  analyser.getByteTimeDomainData(timeDomain)
 
   <span class="comment"># Draw waveforms or frequency spectrum</span>
   ratio = canvas.height() / <span class="number">255</span>
@@ -132,6 +135,13 @@ setInterval -&gt;
       width: <span class="number">1</span>
       height: ratio * value
       color: <span class="string">"blue"</span>
+
+  Array::forEach.call timeDomain, (value, index) -&gt;
+    canvas.drawCircle
+      x: index
+      y: ratio * (<span class="number">255</span> - value)
+      radius: <span class="number">1</span>
+      color: <span class="string">"red"</span>
 
 , <span class="number">1000</span>/<span class="number">60</span></code></pre>
 </div>
