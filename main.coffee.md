@@ -10,7 +10,6 @@ Synth
       height: height
 
     document.body.appendChild canvas.element()
-    canvas.fill "black"
 
 Synthesizing sound using web audio and crying about it.
 
@@ -22,7 +21,7 @@ Synthesizing sound using web audio and crying about it.
     global.context = new AudioContext
 
     masterGain = context.createGain()
-    masterGain.gain.value = 0.1
+    masterGain.gain.value = 0.2
     masterGain.connect(context.destination)
 
     oscs = [0..10].map ->
@@ -63,3 +62,15 @@ Synthesizing sound using web audio and crying about it.
       {gain} = oscs[identifier]
 
       gain.value = 0
+
+    handleResize =  ->
+      canvas.width(window.innerWidth)
+      canvas.height(window.innerHeight)
+
+    handleResize()
+    window.addEventListener "resize", handleResize, false
+
+    setInterval ->
+      canvas.fill "black"
+      # TODO: Draw waveforms or frequency spectrum
+    , 1000/60
