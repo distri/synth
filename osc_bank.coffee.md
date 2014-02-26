@@ -3,6 +3,46 @@ OSC Bank
 
 A bank of oscillators
 
+A single frequency input controls all harmonics.
+
+    module.exports = ->
+      line = generateLine()
+
+      fundamental = context.createGain()
+      fundamental.gain.value = 220
+
+      line.connect(fundamental)
+
+      out = context.createGain()
+      out.gain.value = 1
+
+      [1, 2, 7].map (n, i) ->
+        overtone = context.createGain()
+        overtone.gain.value = n
+
+        fundamental.connect(overtone)
+
+        gain = context.createGain()
+        gain.gain.value = 1 / Math.pow(2, i + 1)
+        gain.connect(out)
+
+        [-5, 0, 5].map (n) ->
+          osc = context.createOscillator()
+          osc.frequency.value = 0
+          osc.type = 'triangle'
+          osc.start(0)
+          osc.connect(gain)
+          osc.detune = n
+
+          overtone.connect(osc.frequency)
+
+      frequency: fundamental.gain
+      connect: (destination) ->
+        out.connect(destination)
+
+Helpers
+-------
+
 Return an 'oscillator' that emits a constant stream of 1s
 
     # Somewhat unreliable
@@ -65,46 +105,3 @@ Return an 'oscillator' that emits a constant stream of 1s
       line.start(0)
 
       return line
-
-A single frequency input controls all harmonics.
-
-    module.exports = ->
-      line = generateLine()
-
-      fundamental = context.createGain()
-      fundamental.gain.value = 220
-
-      line.connect(fundamental)
-
-      out = context.createGain()
-      out.gain.value = 1
-
-      [2, 5, 7].map (n, i) ->
-        overtone = context.createGain()
-        overtone.gain.value = n
-
-        fundamental.connect(overtone)
-
-        gain = context.createGain()
-        gain.gain.value = 1 / Math.pow(2, i + 1)
-        gain.connect(out)
-
-        [-5, 0, 5].map (n) ->
-          osc = context.createOscillator()
-          osc.frequency.value = 0
-          osc.type = 'triangle'
-          osc.start(0)
-          osc.connect(gain)
-          osc.detune = n
-
-          overtone.connect(osc.frequency)
-
-      analyser = context.createAnalyser()
-
-      out.connect(analyser)
-
-      global.analyser = analyser
-
-      frequency: fundamental.gain
-      connect: (destination) ->
-        out.connect(destination)
