@@ -19,7 +19,7 @@ TODO: Figure out how to have a single frequency input control all harmonics.
       out = context.createGain()
       out.gain.value = 1
 
-      oscs = [0..4].map (n) ->
+      [0..7].map (n) ->
         overtone = context.createGain()
         overtone.gain.value = n
 
@@ -28,14 +28,19 @@ TODO: Figure out how to have a single frequency input control all harmonics.
         osc = context.createOscillator()
         osc.start(0)
         osc.frequency.value = 220 * n # Math.pow(2, n)
-        osc.type = osc.SINE
 
-        overtone.connect(osc.frequency)
+        # overtone.connect(osc.frequency)
 
         gain = context.createGain()
         gain.gain.value = 1 / Math.pow(2, n)
         osc.connect(gain)
         gain.connect(out)
+
+      analyser = context.createAnalyser()
+
+      out.connect(analyser)
+
+      global.analyser = analyser
 
       frequency: fundamental.gain
       connect: (destination) ->

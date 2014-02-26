@@ -1,6 +1,17 @@
 Synth
 =====
 
+    TouchCanvas = require "touch-canvas"
+
+    {width, height} = require "./pixie"
+
+    canvas = TouchCanvas
+      width: width
+      height: height
+
+    document.body.appendChild canvas.element()
+    canvas.fill "black"
+
 Synthesizing sound using web audio and crying about it.
 
     require "./setup"
@@ -14,11 +25,19 @@ Synthesizing sound using web audio and crying about it.
     masterGain.gain.value = 0.1
     masterGain.connect(context.destination)
 
-    vco = context.createOscillator()
-    vco.start(0)
-    vco.type = vco.TRIANGLE
+    oscs = [0..10].map ->
+      vco = context.createOscillator()
+      vco.start(0)
+      vco.type = vco.TRIANGLE
 
-    # vco = Bank()
+      vca = context.createGain()
+      vca.gain.value = 0.0
+
+      vco.connect(vca)
+      vca.connect(masterGain)
+
+      frequency: vco.frequency
+      gain: vca.gain
 
     # FM Effect
     # LFO(vco.frequency, 61, 1000)
@@ -26,21 +45,21 @@ Synthesizing sound using web audio and crying about it.
     # Vibrato Effect
     # LFO(vco.frequency, 7, 10)
 
-    vca = context.createGain()
-    vca.gain.value = 0.0
-
     # Tremolo Effect
     # LFO(masterGain.gain, 10, 0.01)
-
-    vco.connect(vca)
-    vca.connect(masterGain)
 
     freq = (x) ->
       220 * pow(2, x)
 
-    handler = (e) ->
-      vco.frequency.value = freq( e.pageX / innerWidth)
-      vca.gain.value = 1 - (e.pageY / innerHeight)
+    handler = ({identifier, x, y}) ->
+      {frequency, gain} = oscs[identifier]
 
-    document.addEventListener "mousedown", handler, false
-    document.addEventListener "mousemove", handler, false
+      frequency.value = freq(x)
+      gain.value = 1 - y
+
+    canvas.on "touch", handler
+    canvas.on "move", handler
+    canvas.on "release", ({identifier}) ->
+      {gain} = oscs[identifier]
+
+      gain.value = 0
