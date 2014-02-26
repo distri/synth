@@ -75,11 +75,14 @@ Synthesizing sound using web audio and crying about it.
     analyser.smoothingTimeConstant = 0
     masterGain.connect(analyser)
 
+    frequencyDomain = new Uint8Array(analyser.frequencyBinCount)
+    timeDomain = new Uint8Array(analyser.frequencyBinCount)
+
     setInterval ->
       canvas.fill "black"
 
-      frequencyDomain = new Uint8Array(analyser.frequencyBinCount)
       analyser.getByteFrequencyData(frequencyDomain)
+      analyser.getByteTimeDomainData(timeDomain)
 
       # Draw waveforms or frequency spectrum
       ratio = canvas.height() / 255
@@ -90,5 +93,12 @@ Synthesizing sound using web audio and crying about it.
           width: 1
           height: ratio * value
           color: "blue"
+
+      Array::forEach.call timeDomain, (value, index) ->
+        canvas.drawCircle
+          x: index
+          y: ratio * (255 - value)
+          radius: 1
+          color: "red"
 
     , 1000/60
