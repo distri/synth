@@ -50,10 +50,11 @@ Synthesizing sound using web audio and crying about it.
     freq = (x) ->
       220 * pow(2, x)
 
+    octaves = 2
     handler = ({identifier, x, y}) ->
       {frequency, gain} = oscs[identifier]
 
-      frequency.value = freq(x)
+      frequency.value = freq(octaves * x)
       gain.value = 1 - y
 
     canvas.on "touch", handler
