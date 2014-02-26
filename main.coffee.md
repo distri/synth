@@ -71,7 +71,24 @@ Synthesizing sound using web audio and crying about it.
     handleResize()
     window.addEventListener "resize", handleResize, false
 
+    analyser = context.createAnalyser()
+    analyser.smoothingTimeConstant = 0
+    masterGain.connect(analyser)
+
     setInterval ->
       canvas.fill "black"
-      # TODO: Draw waveforms or frequency spectrum
+
+      frequencyDomain = new Uint8Array(analyser.frequencyBinCount)
+      analyser.getByteFrequencyData(frequencyDomain)
+
+      # Draw waveforms or frequency spectrum
+      ratio = canvas.height() / 255
+      Array::forEach.call frequencyDomain, (value, index) ->
+        canvas.drawRect
+          x: index
+          y: ratio * (255 - value)
+          width: 1
+          height: ratio * value
+          color: "blue"
+
     , 1000/60
