@@ -50,7 +50,7 @@
   out = context.createGain()
   out.gain.value = <span class="number">1</span>
 
-  oscs = [<span class="number">0.</span><span class="number">.4</span>].map (n) -&gt;
+  [<span class="number">0.</span><span class="number">.7</span>].map (n) -&gt;
     overtone = context.createGain()
     overtone.gain.value = n
 
@@ -59,14 +59,19 @@
     osc = context.createOscillator()
     osc.start(<span class="number">0</span>)
     osc.frequency.value = <span class="number">220</span> * n <span class="comment"># Math.pow(2, n)</span>
-    osc.type = osc.SINE
 
-    overtone.connect(osc.frequency)
+    <span class="comment"># overtone.connect(osc.frequency)</span>
 
     gain = context.createGain()
     gain.gain.value = <span class="number">1</span> / Math.pow(<span class="number">2</span>, n)
     osc.connect(gain)
     gain.connect(out)
+
+  analyser = context.createAnalyser()
+
+  out.connect(analyser)
+
+  global.analyser = analyser
 
   frequency: fundamental.gain
   connect: (destination) -&gt;

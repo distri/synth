@@ -36,7 +36,15 @@
             </div>
             <div class="content"><pre><code class="lang-coffeescript">global.AudioContext = 
   global.AudioContext <span class="keyword">or</span>
-  global.webkitAudioContext</code></pre>
+  global.webkitAudioContext
+
+<span class="function"><span class="title">applyStyleSheet</span></span> = -&gt;
+  styleNode = document.createElement(<span class="string">"style"</span>)
+  styleNode.innerHTML = require <span class="string">"./style"</span>
+
+  document.head.appendChild(styleNode)
+
+applyStyleSheet()</code></pre>
 </div>
         </li>
         
