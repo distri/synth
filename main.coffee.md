@@ -25,9 +25,9 @@ Synthesizing sound using web audio and crying about it.
     masterGain.connect(context.destination)
 
     oscs = [0..10].map ->
-      vco = context.createOscillator()
-      vco.start(0)
-      vco.type = vco.TRIANGLE
+      vco = Bank()
+      # vco.start(0)
+      # vco.type = vco.TRIANGLE
 
       vca = context.createGain()
       vca.gain.value = 0.0
@@ -73,6 +73,7 @@ Synthesizing sound using web audio and crying about it.
 
     analyser = context.createAnalyser()
     analyser.smoothingTimeConstant = 0
+
     masterGain.connect(analyser)
 
     frequencyDomain = new Uint8Array(analyser.frequencyBinCount)
