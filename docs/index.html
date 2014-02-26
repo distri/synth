@@ -67,9 +67,9 @@ masterGain.gain.value = <span class="number">0.2</span>
 masterGain.connect(context.destination)
 
 oscs = [<span class="number">0.</span><span class="number">.10</span>].map -&gt;
-  vco = context.createOscillator()
-  vco.start(<span class="number">0</span>)
-  vco.type = vco.TRIANGLE
+  vco = Bank()
+  <span class="comment"># vco.start(0)</span>
+  <span class="comment"># vco.type = vco.TRIANGLE</span>
 
   vca = context.createGain()
   vca.gain.value = <span class="number">0.0</span>
@@ -115,6 +115,7 @@ window.addEventListener <span class="string">"resize"</span>, handleResize, <spa
 
 analyser = context.createAnalyser()
 analyser.smoothingTimeConstant = <span class="number">0</span>
+
 masterGain.connect(analyser)
 
 frequencyDomain = <span class="keyword">new</span> Uint8Array(analyser.frequencyBinCount)

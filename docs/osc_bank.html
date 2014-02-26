@@ -33,14 +33,83 @@
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
               <p>A bank of oscillators</p>
-<p>TODO: Figure out how to have a single frequency input control all harmonics.</p>
+<p>Return an &#39;oscillator&#39; that emits a constant stream of 1s</p>
+
+            </div>
+            <div class="content"><pre><code class="lang-coffeescript"><span class="comment"># Somewhat unreliable</span>
+<span class="function"><span class="title">generateLine</span></span> = -&gt;
+  <span class="comment"># Most of this is a hack to get a constant 'voltage' line of 1</span>
+  <span class="comment"># Phase offset a sine wave by 1/4 and lock it to zero frequency</span>
+
+  f = <span class="number">110</span>
+  line = context.createOscillator()
+  line.frequency.value = f
+  line.type = line.SQUARE
+  line.start(context.currentTime)
+  line.frequency.setValueAtTime(<span class="number">0</span>, context.currentTime + <span class="number">1</span>/(<span class="number">4</span> * f))
+
+  <span class="keyword">return</span> line
+
+<span class="comment"># Occasional clicks and pops</span>
+<span class="comment"># Totally fails when console is open</span>
+<span class="function"><span class="title">generateLine</span></span> = -&gt;
+  line = context.createScriptProcessor(<span class="number">1024</span>, <span class="number">0</span>, <span class="number">1</span>)
+  line.<span class="function"><span class="title">onaudioprocess</span></span> = ({outputBuffer}) -&gt;
+    n = <span class="number">0</span>
+    length = outputBuffer.length
+
+    data = outputBuffer.getChannelData(<span class="number">0</span>)
+
+    <span class="keyword">while</span> n &lt; length
+      data[n] = <span class="number">1</span>
+      n += <span class="number">1</span>
+
+  <span class="keyword">return</span> line
+
+<span class="function"><span class="title">generateLine</span></span> = -&gt;
+  size = <span class="number">4096</span>
+  channels = <span class="number">1</span>
+  buffer = context.createBuffer(channels, size, context.sampleRate)
+  data = buffer.getChannelData(<span class="number">0</span>)
+
+  [<span class="number">0.</span>..size].forEach (i) -&gt;
+    data[i] = <span class="number">1</span>
+
+  line = context.createBufferSource()
+
+  line.buffer = buffer
+  line.<span class="keyword">loop</span> = <span class="literal">true</span>
+  line.start(<span class="number">0</span>)
+
+  <span class="keyword">return</span> line
+
+<span class="comment"># TODO: This doesn't work</span>
+<span class="function"><span class="title">generateLine3</span></span> = -&gt;
+  size = <span class="number">2</span>
+  real = <span class="keyword">new</span> Float32Array(size)
+  imag = <span class="keyword">new</span> Float32Array(size)
+  real[<span class="number">0</span>] = <span class="number">2.828</span>
+  wave = context.createPeriodicWave(real, imag)
+
+  line = context.createOscillator()
+  line.setPeriodicWave(wave)
+  line.start(<span class="number">0</span>)
+
+  <span class="keyword">return</span> line</code></pre>
+</div>
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              <div class="pilwrap">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>A single frequency input controls all harmonics.</p>
 
             </div>
             <div class="content"><pre><code class="lang-coffeescript">module.<span class="function"><span class="title">exports</span></span> = -&gt;
-  line = context.createOscillator()
-  line.frequency.value = <span class="number">0</span>
-  line.type = line.SQUARE
-  line.start(<span class="number">0</span>)
+  line = generateLine()
 
   fundamental = context.createGain()
   fundamental.gain.value = <span class="number">220</span>
@@ -50,22 +119,25 @@
   out = context.createGain()
   out.gain.value = <span class="number">1</span>
 
-  [<span class="number">0.</span><span class="number">.7</span>].map (n) -&gt;
+  [<span class="number">2</span>, <span class="number">5</span>, <span class="number">7</span>].map (n, i) -&gt;
     overtone = context.createGain()
     overtone.gain.value = n
 
     fundamental.connect(overtone)
 
-    osc = context.createOscillator()
-    osc.start(<span class="number">0</span>)
-    osc.frequency.value = <span class="number">220</span> * n <span class="comment"># Math.pow(2, n)</span>
-
-    <span class="comment"># overtone.connect(osc.frequency)</span>
-
     gain = context.createGain()
-    gain.gain.value = <span class="number">1</span> / Math.pow(<span class="number">2</span>, n)
-    osc.connect(gain)
+    gain.gain.value = <span class="number">1</span> / Math.pow(<span class="number">2</span>, i + <span class="number">1</span>)
     gain.connect(out)
+
+    [-<span class="number">5</span>, <span class="number">0</span>, <span class="number">5</span>].map (n) -&gt;
+      osc = context.createOscillator()
+      osc.frequency.value = <span class="number">0</span>
+      osc.type = <span class="string">'triangle'</span>
+      osc.start(<span class="number">0</span>)
+      osc.connect(gain)
+      osc.detune = n
+
+      overtone.connect(osc.frequency)
 
   analyser = context.createAnalyser()
 
