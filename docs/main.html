@@ -92,10 +92,11 @@ oscs = [<span class="number">0.</span><span class="number">.10</span>].map -&gt;
 <span class="function"><span class="title">freq</span></span> = (x) -&gt;
   <span class="number">220</span> * pow(<span class="number">2</span>, x)
 
+octaves = <span class="number">2</span>
 <span class="function"><span class="title">handler</span></span> = ({identifier, x, y}) -&gt;
   {frequency, gain} = oscs[identifier]
 
-  frequency.value = freq(x)
+  frequency.value = freq(octaves * x)
   gain.value = <span class="number">1</span> - y
 
 canvas.<span class="literal">on</span> <span class="string">"touch"</span>, handler
