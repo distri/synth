@@ -36,9 +36,16 @@ A single frequency input controls all harmonics.
 
           overtone.connect(osc.frequency)
 
+      filter = context.createBiquadFilter()
+      filter.type = filter.ALLPASS
+      filter.Q = 1
+
+      fundamental.connect(filter.frequency)
+      out.connect(filter)
+
       frequency: fundamental.gain
       connect: (destination) ->
-        out.connect(destination)
+        filter.connect(destination)
 
 Helpers
 -------

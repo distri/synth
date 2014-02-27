@@ -48,13 +48,14 @@ Synthesizing sound using web audio and crying about it.
     # LFO(masterGain.gain, 10, 0.01)
 
     freq = (x) ->
-      220 * pow(2, x)
+      110 * pow(2, x)
 
-    octaves = 2
+    octaves = 3
+    tones = 12
     handler = ({identifier, x, y}) ->
       {frequency, gain} = oscs[identifier]
 
-      frequency.value = freq(octaves * x)
+      frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)))
       gain.value = 1 - y
 
     canvas.on "touch", handler
