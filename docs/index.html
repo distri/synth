@@ -66,7 +66,7 @@ masterGain = context.createGain()
 masterGain.gain.value = <span class="number">0.2</span>
 masterGain.connect(context.destination)
 
-oscs = [<span class="number">0.</span><span class="number">.10</span>].map -&gt;
+oscs = [<span class="number">0.</span><span class="number">.5</span>].map -&gt;
   vco = Bank()
   <span class="comment"># vco.start(0)</span>
   <span class="comment"># vco.type = vco.TRIANGLE</span>
