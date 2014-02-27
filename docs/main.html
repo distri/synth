@@ -102,7 +102,7 @@ initIOS = <span class="keyword">do</span> -&gt;
     gain.gain.value = <span class="number">0</span>
     source = context.createOscillator()
     source.connect(gain)
-    gain.connect(context.destination)
+    gain.connect(masterGain)
     source.start(<span class="number">0</span>)
 
 octaves = <span class="number">3</span>
