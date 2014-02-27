@@ -90,13 +90,14 @@ oscs = [<span class="number">0.</span><span class="number">.10</span>].map -&gt;
 <span class="comment"># LFO(masterGain.gain, 10, 0.01)</span>
 
 <span class="function"><span class="title">freq</span></span> = (x) -&gt;
-  <span class="number">220</span> * pow(<span class="number">2</span>, x)
+  <span class="number">110</span> * pow(<span class="number">2</span>, x)
 
-octaves = <span class="number">2</span>
+octaves = <span class="number">3</span>
+tones = <span class="number">12</span>
 <span class="function"><span class="title">handler</span></span> = ({identifier, x, y}) -&gt;
   {frequency, gain} = oscs[identifier]
 
-  frequency.value = freq(octaves * x)
+  frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)))
   gain.value = <span class="number">1</span> - y
 
 canvas.<span class="literal">on</span> <span class="string">"touch"</span>, handler

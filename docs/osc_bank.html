@@ -67,9 +67,16 @@
 
       overtone.connect(osc.frequency)
 
+  filter = context.createBiquadFilter()
+  filter.type = filter.ALLPASS
+  filter.Q = <span class="number">1</span>
+
+  fundamental.connect(filter.frequency)
+  out.connect(filter)
+
   frequency: fundamental.gain
   connect: (destination) -&gt;
-    out.connect(destination)</code></pre>
+    filter.connect(destination)</code></pre>
 </div>
         </li>
         
