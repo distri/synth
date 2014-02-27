@@ -24,7 +24,7 @@ Synthesizing sound using web audio and crying about it.
     masterGain.gain.value = 0.2
     masterGain.connect(context.destination)
 
-    oscs = [0..10].map ->
+    oscs = [0..5].map ->
       vco = Bank()
       # vco.start(0)
       # vco.type = vco.TRIANGLE
