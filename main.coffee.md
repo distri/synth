@@ -50,9 +50,24 @@ Synthesizing sound using web audio and crying about it.
     freq = (x) ->
       110 * pow(2, x)
 
+    initIOS = do ->
+      initted = false
+      ->
+        return if initted
+
+        initted = true
+        gain = context.createGain()
+        gain.gain.value = 0
+        source = context.createOscillator()
+        source.connect(gain)
+        gain.connect(context.destination)
+        source.start(0)
+
     octaves = 3
     tones = 12
     handler = ({identifier, x, y}) ->
+      initIOS()
+
       {frequency, gain} = oscs[identifier]
 
       frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)))
