@@ -1,4 +1,5 @@
 width: 320
 height: 180
 dependencies:
+  "appcache": "distri/appcache:v0.2.0"
   "touch-canvas": "distri/touch-canvas:v0.3.1"
