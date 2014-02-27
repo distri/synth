@@ -92,9 +92,24 @@ oscs = [<span class="number">0.</span><span class="number">.10</span>].map -&gt;
 <span class="function"><span class="title">freq</span></span> = (x) -&gt;
   <span class="number">110</span> * pow(<span class="number">2</span>, x)
 
+initIOS = <span class="keyword">do</span> -&gt;
+  initted = <span class="literal">false</span>
+  -&gt;
+    <span class="keyword">return</span> <span class="keyword">if</span> initted
+
+    initted = <span class="literal">true</span>
+    gain = context.createGain()
+    gain.gain.value = <span class="number">0</span>
+    source = context.createOscillator()
+    source.connect(gain)
+    gain.connect(context.destination)
+    source.start(<span class="number">0</span>)
+
 octaves = <span class="number">3</span>
 tones = <span class="number">12</span>
 <span class="function"><span class="title">handler</span></span> = ({identifier, x, y}) -&gt;
+  initIOS()
+
   {frequency, gain} = oscs[identifier]
 
   frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)))
