@@ -60,7 +60,7 @@ Synthesizing sound using web audio and crying about it.
         gain.gain.value = 0
         source = context.createOscillator()
         source.connect(gain)
-        gain.connect(context.destination)
+        gain.connect(masterGain)
         source.start(0)
 
     octaves = 3
