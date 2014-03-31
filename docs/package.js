@@ -1,5 +1,168 @@
 (function(pkg) {
-  // Expose a require for our package so scripts can access our modules
+  (function() {
+  var annotateSourceURL, cacheFor, circularGuard, defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule, startsWith,
+    __slice = [].slice;
+
+  fileSeparator = '/';
+
+  global = window;
+
+  defaultEntryPoint = "main";
+
+  circularGuard = {};
+
+  rootModule = {
+    path: ""
+  };
+
+  loadPath = function(parentModule, pkg, path) {
+    var cache, localPath, module, normalizedPath;
+    if (startsWith(path, '/')) {
+      localPath = [];
+    } else {
+      localPath = parentModule.path.split(fileSeparator);
+    }
+    normalizedPath = normalizePath(path, localPath);
+    cache = cacheFor(pkg);
+    if (module = cache[normalizedPath]) {
+      if (module === circularGuard) {
+        throw "Circular dependency detected when requiring " + normalizedPath;
+      }
+    } else {
+      cache[normalizedPath] = circularGuard;
+      try {
+        cache[normalizedPath] = module = loadModule(pkg, normalizedPath);
+      } finally {
+        if (cache[normalizedPath] === circularGuard) {
+          delete cache[normalizedPath];
+        }
+      }
+    }
+    return module.exports;
+  };
+
+  normalizePath = function(path, base) {
+    var piece, result;
+    if (base == null) {
+      base = [];
+    }
+    base = base.concat(path.split(fileSeparator));
+    result = [];
+    while (base.length) {
+      switch (piece = base.shift()) {
+        case "..":
+          result.pop();
+          break;
+        case "":
+        case ".":
+          break;
+        default:
+          result.push(piece);
+      }
+    }
+    return result.join(fileSeparator);
+  };
+
+  loadPackage = function(pkg) {
+    var path;
+    path = pkg.entryPoint || defaultEntryPoint;
+    return loadPath(rootModule, pkg, path);
+  };
+
+  loadModule = function(pkg, path) {
+    var args, context, dirname, file, module, program, values;
+    if (!(file = pkg.distribution[path])) {
+      throw "Could not find file at " + path + " in " + pkg.name;
+    }
+    program = annotateSourceURL(file.content, pkg, path);
+    dirname = path.split(fileSeparator).slice(0, -1).join(fileSeparator);
+    module = {
+      path: dirname,
+      exports: {}
+    };
+    context = {
+      require: generateRequireFn(pkg, module),
+      global: global,
+      module: module,
+      exports: module.exports,
+      PACKAGE: pkg,
+      __filename: path,
+      __dirname: dirname
+    };
+    args = Object.keys(context);
+    values = args.map(function(name) {
+      return context[name];
+    });
+    Function.apply(null, __slice.call(args).concat([program])).apply(module, values);
+    return module;
+  };
+
+  isPackage = function(path) {
+    if (!(startsWith(path, fileSeparator) || startsWith(path, "." + fileSeparator) || startsWith(path, ".." + fileSeparator))) {
+      return path.split(fileSeparator)[0];
+    } else {
+      return false;
+    }
+  };
+
+  generateRequireFn = function(pkg, module) {
+    if (module == null) {
+      module = rootModule;
+    }
+    if (pkg.name == null) {
+      pkg.name = "ROOT";
+    }
+    if (pkg.scopedName == null) {
+      pkg.scopedName = "ROOT";
+    }
+    return function(path) {
+      var otherPackage;
+      if (isPackage(path)) {
+        if (!(otherPackage = pkg.dependencies[path])) {
+          throw "Package: " + path + " not found.";
+        }
+        if (otherPackage.name == null) {
+          otherPackage.name = path;
+        }
+        if (otherPackage.scopedName == null) {
+          otherPackage.scopedName = "" + pkg.scopedName + ":" + path;
+        }
+        return loadPackage(otherPackage);
+      } else {
+        return loadPath(module, pkg, path);
+      }
+    };
+  };
+
+  if (typeof exports !== "undefined" && exports !== null) {
+    exports.generateFor = generateRequireFn;
+  } else {
+    global.Require = {
+      generateFor: generateRequireFn
+    };
+  }
+
+  startsWith = function(string, prefix) {
+    return string.lastIndexOf(prefix, 0) === 0;
+  };
+
+  cacheFor = function(pkg) {
+    if (pkg.cache) {
+      return pkg.cache;
+    }
+    Object.defineProperty(pkg, "cache", {
+      value: {}
+    });
+    return pkg.cache;
+  };
+
+  annotateSourceURL = function(program, pkg, path) {
+    return "" + program + "\n//# sourceURL=" + pkg.scopedName + "/" + path;
+  };
+
+}).call(this);
+
+//# sourceURL=main.coffee
   window.require = Require.generateFor(pkg);
 })({
   "source": {
@@ -15,28 +178,16 @@
       "content": "synth\n=====\n\nWorld's worst synthesizer.\n",
       "type": "blob"
     },
-    "main.coffee.md": {
-      "path": "main.coffee.md",
-      "mode": "100644",
-      "content": "Synth\n=====\n\n    TouchCanvas = require \"touch-canvas\"\n\n    {width, height} = require \"./pixie\"\n\n    canvas = TouchCanvas\n      width: width\n      height: height\n\n    document.body.appendChild canvas.element()\n\nSynthesizing sound using web audio and crying about it.\n\n    require \"./setup\"\n    LFO = require \"./lfo\"\n    Bank = require \"./osc_bank\"\n    {pow} = Math\n\n    global.context = new AudioContext\n\n    masterGain = context.createGain()\n    masterGain.gain.value = 0.2\n    masterGain.connect(context.destination)\n\n    oscs = [0..5].map ->\n      vco = Bank()\n      # vco.start(0)\n      # vco.type = vco.TRIANGLE\n\n      vca = context.createGain()\n      vca.gain.value = 0.0\n\n      vco.connect(vca)\n      vca.connect(masterGain)\n\n      frequency: vco.frequency\n      gain: vca.gain\n\n    # FM Effect\n    # LFO(vco.frequency, 61, 1000)\n\n    # Vibrato Effect\n    # LFO(vco.frequency, 7, 10)\n\n    # Tremolo Effect\n    # LFO(masterGain.gain, 10, 0.01)\n\n    freq = (x) ->\n      110 * pow(2, x)\n\n    initIOS = do ->\n      initted = false\n      ->\n        return if initted\n\n        initted = true\n        gain = context.createGain()\n        gain.gain.value = 0\n        source = context.createOscillator()\n        source.connect(gain)\n        gain.connect(masterGain)\n        source.start(0)\n\n    octaves = 3\n    tones = 12\n    handler = ({identifier, x, y}) ->\n      initIOS()\n\n      {frequency, gain} = oscs[identifier]\n\n      frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)))\n      gain.value = 1 - y\n\n    canvas.on \"touch\", handler\n    canvas.on \"move\", handler\n    canvas.on \"release\", ({identifier}) ->\n      {gain} = oscs[identifier]\n\n      gain.value = 0\n\n    handleResize =  ->\n      canvas.width(window.innerWidth)\n      canvas.height(window.innerHeight)\n\n    handleResize()\n    window.addEventListener \"resize\", handleResize, false\n\n    analyser = context.createAnalyser()\n    analyser.smoothingTimeConstant = 0\n\n    masterGain.connect(analyser)\n\n    frequencyDomain = new Uint8Array(analyser.frequencyBinCount)\n    timeDomain = new Uint8Array(analyser.frequencyBinCount)\n\n    setInterval ->\n      canvas.fill \"black\"\n\n      analyser.getByteFrequencyData(frequencyDomain)\n      analyser.getByteTimeDomainData(timeDomain)\n\n      # Draw waveforms or frequency spectrum\n      ratio = canvas.height() / 255\n      Array::forEach.call frequencyDomain, (value, index) ->\n        canvas.drawRect\n          x: index\n          y: ratio * (255 - value)\n          width: 1\n          height: ratio * value\n          color: \"blue\"\n\n      Array::forEach.call timeDomain, (value, index) ->\n        canvas.drawCircle\n          x: index\n          y: ratio * (255 - value)\n          radius: 1\n          color: \"red\"\n\n    , 1000/60\n",
-      "type": "blob"
-    },
-    "setup.coffee.md": {
-      "path": "setup.coffee.md",
-      "mode": "100644",
-      "content": "Setup\n=====\n\n    global.AudioContext = \n      global.AudioContext or\n      global.webkitAudioContext\n\n    require \"appcache\"\n\n    applyStyleSheet = ->\n      styleNode = document.createElement(\"style\")\n      styleNode.innerHTML = require \"./style\"\n\n      document.head.appendChild(styleNode)\n\n    applyStyleSheet()\n",
-      "type": "blob"
-    },
-    "pixie.cson": {
-      "path": "pixie.cson",
-      "mode": "100644",
-      "content": "width: 320\nheight: 180\ndependencies:\n  \"appcache\": \"distri/appcache:v0.2.0\"\n  \"touch-canvas\": \"distri/touch-canvas:v0.3.1\"\n",
-      "type": "blob"
-    },
     "lfo.coffee.md": {
       "path": "lfo.coffee.md",
       "mode": "100644",
       "content": "LFO Testing\n===========\n\n    module.exports = (target, frequency=10, amplitude=0.05) ->\n      lfo = context.createOscillator()\n      lfo.frequency.value = frequency\n      lfo.type = lfo.SINE\n      lfo.start(0)\n  \n      lfoGain = context.createGain()\n      lfoGain.gain.value = amplitude\n\n      lfo.connect(lfoGain)\n      lfoGain.connect(target)\n",
+      "type": "blob"
+    },
+    "main.coffee.md": {
+      "path": "main.coffee.md",
+      "mode": "100644",
+      "content": "Synth\n=====\n\n    TouchCanvas = require \"touch-canvas\"\n\n    {width, height} = require \"./pixie\"\n\n    canvas = TouchCanvas\n      width: width\n      height: height\n\n    document.body.appendChild canvas.element()\n\nSynthesizing sound using web audio and crying about it.\n\n    require \"./setup\"\n    Viz = require \"./lib/viz\"\n    LFO = require \"./lfo\"\n    Bank = require \"./osc_bank\"\n    {pow} = Math\n\n    global.context = new AudioContext\n\n    masterGain = context.createGain()\n    masterGain.gain.value = 0.2\n    masterGain.connect(context.destination)\n\n    oscs = [0..5].map ->\n      vco = Bank()\n      # vco.start(0)\n      # vco.type = vco.TRIANGLE\n\n      vca = context.createGain()\n      vca.gain.value = 0.0\n\n      vco.connect(vca)\n      vca.connect(masterGain)\n\n      frequency: vco.frequency\n      gain: vca.gain\n\n    # FM Effect\n    # LFO(vco.frequency, 61, 1000)\n\n    # Vibrato Effect\n    # LFO(vco.frequency, 7, 10)\n\n    # Tremolo Effect\n    # LFO(masterGain.gain, 10, 0.01)\n\n    freq = (x) ->\n      110 * pow(2, x)\n\n    initIOS = do ->\n      initted = false\n      ->\n        return if initted\n\n        initted = true\n        gain = context.createGain()\n        gain.gain.value = 0\n        source = context.createOscillator()\n        source.connect(gain)\n        gain.connect(masterGain)\n        source.start(0)\n\n    octaves = 3\n    tones = 12\n    handler = ({identifier, x, y}) ->\n      initIOS()\n\n      {frequency, gain} = oscs[identifier]\n\n      frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)))\n      gain.value = 1 - y\n\n    canvas.on \"touch\", handler\n    canvas.on \"move\", handler\n    canvas.on \"release\", ({identifier}) ->\n      {gain} = oscs[identifier]\n\n      gain.value = 0\n\n    handleResize =  ->\n      canvas.width(window.innerWidth)\n      canvas.height(window.innerHeight)\n\n    handleResize()\n    window.addEventListener \"resize\", handleResize, false\n    \n    analyser = context.createAnalyser()\n    analyser.smoothingTimeConstant = 0\n  \n    masterGain.connect(analyser)\n\n    viz = Viz(analyser)\n\n    setInterval ->\n      viz.draw(canvas)\n    , 1000/60\n",
       "type": "blob"
     },
     "osc_bank.coffee.md": {
@@ -45,22 +196,45 @@
       "content": "OSC Bank\n========\n\nA bank of oscillators\n\nA single frequency input controls all harmonics.\n\n    module.exports = ->\n      line = generateLine()\n\n      fundamental = context.createGain()\n      fundamental.gain.value = 220\n\n      line.connect(fundamental)\n\n      out = context.createGain()\n      out.gain.value = 1\n\n      [1, 2, 7].map (n, i) ->\n        overtone = context.createGain()\n        overtone.gain.value = n\n\n        fundamental.connect(overtone)\n\n        gain = context.createGain()\n        gain.gain.value = 1 / Math.pow(2, i + 1)\n        gain.connect(out)\n\n        [-5, 0, 5].map (n) ->\n          osc = context.createOscillator()\n          osc.frequency.value = 0\n          osc.type = 'triangle'\n          osc.start(0)\n          osc.connect(gain)\n          osc.detune = n\n\n          overtone.connect(osc.frequency)\n\n      filter = context.createBiquadFilter()\n      filter.type = filter.ALLPASS\n      filter.Q = 1\n\n      fundamental.connect(filter.frequency)\n      out.connect(filter)\n\n      frequency: fundamental.gain\n      connect: (destination) ->\n        filter.connect(destination)\n\nHelpers\n-------\n\nReturn an 'oscillator' that emits a constant stream of 1s\n\n    # Somewhat unreliable\n    generateLine = ->\n      # Most of this is a hack to get a constant 'voltage' line of 1\n      # Phase offset a sine wave by 1/4 and lock it to zero frequency\n      \n      f = 110\n      line = context.createOscillator()\n      line.frequency.value = f\n      line.type = line.SQUARE\n      line.start(context.currentTime)\n      line.frequency.setValueAtTime(0, context.currentTime + 1/(4 * f))\n\n      return line\n\n    # Occasional clicks and pops\n    # Totally fails when console is open\n    generateLine = ->\n      line = context.createScriptProcessor(1024, 0, 1)\n      line.onaudioprocess = ({outputBuffer}) ->\n        n = 0\n        length = outputBuffer.length\n\n        data = outputBuffer.getChannelData(0)\n\n        while n < length\n          data[n] = 1\n          n += 1\n\n      return line\n\n    generateLine = ->\n      size = 4096\n      channels = 1\n      buffer = context.createBuffer(channels, size, context.sampleRate)\n      data = buffer.getChannelData(0)\n\n      [0...size].forEach (i) ->\n        data[i] = 1\n\n      line = context.createBufferSource()\n\n      line.buffer = buffer\n      line.loop = true\n      line.start(0)\n\n      return line\n\n    # TODO: This doesn't work\n    generateLine3 = ->\n      size = 2\n      real = new Float32Array(size)\n      imag = new Float32Array(size)\n      real[0] = 2.828\n      wave = context.createPeriodicWave(real, imag)\n\n      line = context.createOscillator()\n      line.setPeriodicWave(wave)\n      line.start(0)\n\n      return line\n",
       "type": "blob"
     },
+    "pixie.cson": {
+      "path": "pixie.cson",
+      "mode": "100644",
+      "content": "width: 320\nheight: 180\ndependencies:\n  \"appcache\": \"distri/appcache:v0.2.0\"\n  \"touch-canvas\": \"distri/touch-canvas:v0.3.1\"\n",
+      "type": "blob"
+    },
+    "setup.coffee.md": {
+      "path": "setup.coffee.md",
+      "mode": "100644",
+      "content": "Setup\n=====\n\n    global.AudioContext = \n      global.AudioContext or\n      global.webkitAudioContext\n\n    require \"appcache\"\n\n    applyStyleSheet = ->\n      styleNode = document.createElement(\"style\")\n      styleNode.innerHTML = require \"./style\"\n\n      document.head.appendChild(styleNode)\n\n    applyStyleSheet()\n",
+      "type": "blob"
+    },
     "style.styl": {
       "path": "style.styl",
       "mode": "100644",
       "content": "*\n  box-sizing: border-box\n\nhtml\n  height: 100%\n\nbody\n  font-family: \"HelveticaNeue-Light\", \"Helvetica Neue Light\", \"Helvetica Neue\", Helvetica, Arial, \"Lucida Grande\", sans-serif\n  font-weight: 300\n  font-size: 18px\n  height: 100%\n  margin: 0\n  overflow: hidden\n  user-select: none\n\n.center\n  bottom: 0\n  position: absolute\n  top: 0\n  left: 0\n  right: 0\n  margin: auto\n",
       "type": "blob"
+    },
+    "lib/viz.coffee.md": {
+      "path": "lib/viz.coffee.md",
+      "mode": "100644",
+      "content": "Audio Viz\n=========\n\n    module.exports = (analyser) ->\n      frequencyDomain = new Uint8Array(analyser.frequencyBinCount)\n      timeDomain = new Uint8Array(analyser.frequencyBinCount)\n\n      draw: (canvas) ->\n        canvas.fill \"black\"\n\n        analyser.getByteFrequencyData(frequencyDomain)\n        analyser.getByteTimeDomainData(timeDomain)\n\n        # Draw waveforms or frequency spectrum\n        ratio = canvas.height() / 255\n        Array::forEach.call frequencyDomain, (value, index) ->\n          canvas.drawRect\n            x: index\n            y: ratio * (255 - value)\n            width: 1\n            height: ratio * value\n            color: \"blue\"\n\n        Array::forEach.call timeDomain, (value, index) ->\n          canvas.drawCircle\n            x: index\n            y: ratio * (255 - value)\n            radius: 1\n            color: \"red\"\n",
+      "type": "blob"
     }
   },
   "distribution": {
-    "main": {
-      "path": "main",
-      "content": "(function() {\n  var Bank, LFO, TouchCanvas, analyser, canvas, freq, frequencyDomain, handleResize, handler, height, initIOS, masterGain, octaves, oscs, pow, timeDomain, tones, width, _ref;\n\n  TouchCanvas = require(\"touch-canvas\");\n\n  _ref = require(\"./pixie\"), width = _ref.width, height = _ref.height;\n\n  canvas = TouchCanvas({\n    width: width,\n    height: height\n  });\n\n  document.body.appendChild(canvas.element());\n\n  require(\"./setup\");\n\n  LFO = require(\"./lfo\");\n\n  Bank = require(\"./osc_bank\");\n\n  pow = Math.pow;\n\n  global.context = new AudioContext;\n\n  masterGain = context.createGain();\n\n  masterGain.gain.value = 0.2;\n\n  masterGain.connect(context.destination);\n\n  oscs = [0, 1, 2, 3, 4, 5].map(function() {\n    var vca, vco;\n    vco = Bank();\n    vca = context.createGain();\n    vca.gain.value = 0.0;\n    vco.connect(vca);\n    vca.connect(masterGain);\n    return {\n      frequency: vco.frequency,\n      gain: vca.gain\n    };\n  });\n\n  freq = function(x) {\n    return 110 * pow(2, x);\n  };\n\n  initIOS = (function() {\n    var initted;\n    initted = false;\n    return function() {\n      var gain, source;\n      if (initted) {\n        return;\n      }\n      initted = true;\n      gain = context.createGain();\n      gain.gain.value = 0;\n      source = context.createOscillator();\n      source.connect(gain);\n      gain.connect(masterGain);\n      return source.start(0);\n    };\n  })();\n\n  octaves = 3;\n\n  tones = 12;\n\n  handler = function(_arg) {\n    var frequency, gain, identifier, x, y, _ref1;\n    identifier = _arg.identifier, x = _arg.x, y = _arg.y;\n    initIOS();\n    _ref1 = oscs[identifier], frequency = _ref1.frequency, gain = _ref1.gain;\n    frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)));\n    return gain.value = 1 - y;\n  };\n\n  canvas.on(\"touch\", handler);\n\n  canvas.on(\"move\", handler);\n\n  canvas.on(\"release\", function(_arg) {\n    var gain, identifier;\n    identifier = _arg.identifier;\n    gain = oscs[identifier].gain;\n    return gain.value = 0;\n  });\n\n  handleResize = function() {\n    canvas.width(window.innerWidth);\n    return canvas.height(window.innerHeight);\n  };\n\n  handleResize();\n\n  window.addEventListener(\"resize\", handleResize, false);\n\n  analyser = context.createAnalyser();\n\n  analyser.smoothingTimeConstant = 0;\n\n  masterGain.connect(analyser);\n\n  frequencyDomain = new Uint8Array(analyser.frequencyBinCount);\n\n  timeDomain = new Uint8Array(analyser.frequencyBinCount);\n\n  setInterval(function() {\n    var ratio;\n    canvas.fill(\"black\");\n    analyser.getByteFrequencyData(frequencyDomain);\n    analyser.getByteTimeDomainData(timeDomain);\n    ratio = canvas.height() / 255;\n    Array.prototype.forEach.call(frequencyDomain, function(value, index) {\n      return canvas.drawRect({\n        x: index,\n        y: ratio * (255 - value),\n        width: 1,\n        height: ratio * value,\n        color: \"blue\"\n      });\n    });\n    return Array.prototype.forEach.call(timeDomain, function(value, index) {\n      return canvas.drawCircle({\n        x: index,\n        y: ratio * (255 - value),\n        radius: 1,\n        color: \"red\"\n      });\n    });\n  }, 1000 / 60);\n\n}).call(this);\n\n//# sourceURL=main.coffee",
+    "lfo": {
+      "path": "lfo",
+      "content": "(function() {\n  module.exports = function(target, frequency, amplitude) {\n    var lfo, lfoGain;\n    if (frequency == null) {\n      frequency = 10;\n    }\n    if (amplitude == null) {\n      amplitude = 0.05;\n    }\n    lfo = context.createOscillator();\n    lfo.frequency.value = frequency;\n    lfo.type = lfo.SINE;\n    lfo.start(0);\n    lfoGain = context.createGain();\n    lfoGain.gain.value = amplitude;\n    lfo.connect(lfoGain);\n    return lfoGain.connect(target);\n  };\n\n}).call(this);\n",
       "type": "blob"
     },
-    "setup": {
-      "path": "setup",
-      "content": "(function() {\n  var applyStyleSheet;\n\n  global.AudioContext = global.AudioContext || global.webkitAudioContext;\n\n  require(\"appcache\");\n\n  applyStyleSheet = function() {\n    var styleNode;\n    styleNode = document.createElement(\"style\");\n    styleNode.innerHTML = require(\"./style\");\n    return document.head.appendChild(styleNode);\n  };\n\n  applyStyleSheet();\n\n}).call(this);\n\n//# sourceURL=setup.coffee",
+    "main": {
+      "path": "main",
+      "content": "(function() {\n  var Bank, LFO, TouchCanvas, Viz, analyser, canvas, freq, handleResize, handler, height, initIOS, masterGain, octaves, oscs, pow, tones, viz, width, _ref;\n\n  TouchCanvas = require(\"touch-canvas\");\n\n  _ref = require(\"./pixie\"), width = _ref.width, height = _ref.height;\n\n  canvas = TouchCanvas({\n    width: width,\n    height: height\n  });\n\n  document.body.appendChild(canvas.element());\n\n  require(\"./setup\");\n\n  Viz = require(\"./lib/viz\");\n\n  LFO = require(\"./lfo\");\n\n  Bank = require(\"./osc_bank\");\n\n  pow = Math.pow;\n\n  global.context = new AudioContext;\n\n  masterGain = context.createGain();\n\n  masterGain.gain.value = 0.2;\n\n  masterGain.connect(context.destination);\n\n  oscs = [0, 1, 2, 3, 4, 5].map(function() {\n    var vca, vco;\n    vco = Bank();\n    vca = context.createGain();\n    vca.gain.value = 0.0;\n    vco.connect(vca);\n    vca.connect(masterGain);\n    return {\n      frequency: vco.frequency,\n      gain: vca.gain\n    };\n  });\n\n  freq = function(x) {\n    return 110 * pow(2, x);\n  };\n\n  initIOS = (function() {\n    var initted;\n    initted = false;\n    return function() {\n      var gain, source;\n      if (initted) {\n        return;\n      }\n      initted = true;\n      gain = context.createGain();\n      gain.gain.value = 0;\n      source = context.createOscillator();\n      source.connect(gain);\n      gain.connect(masterGain);\n      return source.start(0);\n    };\n  })();\n\n  octaves = 3;\n\n  tones = 12;\n\n  handler = function(_arg) {\n    var frequency, gain, identifier, x, y, _ref1;\n    identifier = _arg.identifier, x = _arg.x, y = _arg.y;\n    initIOS();\n    _ref1 = oscs[identifier], frequency = _ref1.frequency, gain = _ref1.gain;\n    frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)));\n    return gain.value = 1 - y;\n  };\n\n  canvas.on(\"touch\", handler);\n\n  canvas.on(\"move\", handler);\n\n  canvas.on(\"release\", function(_arg) {\n    var gain, identifier;\n    identifier = _arg.identifier;\n    gain = oscs[identifier].gain;\n    return gain.value = 0;\n  });\n\n  handleResize = function() {\n    canvas.width(window.innerWidth);\n    return canvas.height(window.innerHeight);\n  };\n\n  handleResize();\n\n  window.addEventListener(\"resize\", handleResize, false);\n\n  analyser = context.createAnalyser();\n\n  analyser.smoothingTimeConstant = 0;\n\n  masterGain.connect(analyser);\n\n  viz = Viz(analyser);\n\n  setInterval(function() {\n    return viz.draw(canvas);\n  }, 1000 / 60);\n\n}).call(this);\n",
+      "type": "blob"
+    },
+    "osc_bank": {
+      "path": "osc_bank",
+      "content": "(function() {\n  var generateLine, generateLine3;\n\n  module.exports = function() {\n    var filter, fundamental, line, out;\n    line = generateLine();\n    fundamental = context.createGain();\n    fundamental.gain.value = 220;\n    line.connect(fundamental);\n    out = context.createGain();\n    out.gain.value = 1;\n    [1, 2, 7].map(function(n, i) {\n      var gain, overtone;\n      overtone = context.createGain();\n      overtone.gain.value = n;\n      fundamental.connect(overtone);\n      gain = context.createGain();\n      gain.gain.value = 1 / Math.pow(2, i + 1);\n      gain.connect(out);\n      return [-5, 0, 5].map(function(n) {\n        var osc;\n        osc = context.createOscillator();\n        osc.frequency.value = 0;\n        osc.type = 'triangle';\n        osc.start(0);\n        osc.connect(gain);\n        osc.detune = n;\n        return overtone.connect(osc.frequency);\n      });\n    });\n    filter = context.createBiquadFilter();\n    filter.type = filter.ALLPASS;\n    filter.Q = 1;\n    fundamental.connect(filter.frequency);\n    out.connect(filter);\n    return {\n      frequency: fundamental.gain,\n      connect: function(destination) {\n        return filter.connect(destination);\n      }\n    };\n  };\n\n  generateLine = function() {\n    var f, line;\n    f = 110;\n    line = context.createOscillator();\n    line.frequency.value = f;\n    line.type = line.SQUARE;\n    line.start(context.currentTime);\n    line.frequency.setValueAtTime(0, context.currentTime + 1 / (4 * f));\n    return line;\n  };\n\n  generateLine = function() {\n    var line;\n    line = context.createScriptProcessor(1024, 0, 1);\n    line.onaudioprocess = function(_arg) {\n      var data, length, n, outputBuffer, _results;\n      outputBuffer = _arg.outputBuffer;\n      n = 0;\n      length = outputBuffer.length;\n      data = outputBuffer.getChannelData(0);\n      _results = [];\n      while (n < length) {\n        data[n] = 1;\n        _results.push(n += 1);\n      }\n      return _results;\n    };\n    return line;\n  };\n\n  generateLine = function() {\n    var buffer, channels, data, line, size, _i, _results;\n    size = 4096;\n    channels = 1;\n    buffer = context.createBuffer(channels, size, context.sampleRate);\n    data = buffer.getChannelData(0);\n    (function() {\n      _results = [];\n      for (var _i = 0; 0 <= size ? _i < size : _i > size; 0 <= size ? _i++ : _i--){ _results.push(_i); }\n      return _results;\n    }).apply(this).forEach(function(i) {\n      return data[i] = 1;\n    });\n    line = context.createBufferSource();\n    line.buffer = buffer;\n    line.loop = true;\n    line.start(0);\n    return line;\n  };\n\n  generateLine3 = function() {\n    var imag, line, real, size, wave;\n    size = 2;\n    real = new Float32Array(size);\n    imag = new Float32Array(size);\n    real[0] = 2.828;\n    wave = context.createPeriodicWave(real, imag);\n    line = context.createOscillator();\n    line.setPeriodicWave(wave);\n    line.start(0);\n    return line;\n  };\n\n}).call(this);\n",
       "type": "blob"
     },
     "pixie": {
@@ -68,19 +242,19 @@
       "content": "module.exports = {\"width\":320,\"height\":180,\"dependencies\":{\"appcache\":\"distri/appcache:v0.2.0\",\"touch-canvas\":\"distri/touch-canvas:v0.3.1\"}};",
       "type": "blob"
     },
-    "lfo": {
-      "path": "lfo",
-      "content": "(function() {\n  module.exports = function(target, frequency, amplitude) {\n    var lfo, lfoGain;\n    if (frequency == null) {\n      frequency = 10;\n    }\n    if (amplitude == null) {\n      amplitude = 0.05;\n    }\n    lfo = context.createOscillator();\n    lfo.frequency.value = frequency;\n    lfo.type = lfo.SINE;\n    lfo.start(0);\n    lfoGain = context.createGain();\n    lfoGain.gain.value = amplitude;\n    lfo.connect(lfoGain);\n    return lfoGain.connect(target);\n  };\n\n}).call(this);\n\n//# sourceURL=lfo.coffee",
-      "type": "blob"
-    },
-    "osc_bank": {
-      "path": "osc_bank",
-      "content": "(function() {\n  var generateLine, generateLine3;\n\n  module.exports = function() {\n    var filter, fundamental, line, out;\n    line = generateLine();\n    fundamental = context.createGain();\n    fundamental.gain.value = 220;\n    line.connect(fundamental);\n    out = context.createGain();\n    out.gain.value = 1;\n    [1, 2, 7].map(function(n, i) {\n      var gain, overtone;\n      overtone = context.createGain();\n      overtone.gain.value = n;\n      fundamental.connect(overtone);\n      gain = context.createGain();\n      gain.gain.value = 1 / Math.pow(2, i + 1);\n      gain.connect(out);\n      return [-5, 0, 5].map(function(n) {\n        var osc;\n        osc = context.createOscillator();\n        osc.frequency.value = 0;\n        osc.type = 'triangle';\n        osc.start(0);\n        osc.connect(gain);\n        osc.detune = n;\n        return overtone.connect(osc.frequency);\n      });\n    });\n    filter = context.createBiquadFilter();\n    filter.type = filter.ALLPASS;\n    filter.Q = 1;\n    fundamental.connect(filter.frequency);\n    out.connect(filter);\n    return {\n      frequency: fundamental.gain,\n      connect: function(destination) {\n        return filter.connect(destination);\n      }\n    };\n  };\n\n  generateLine = function() {\n    var f, line;\n    f = 110;\n    line = context.createOscillator();\n    line.frequency.value = f;\n    line.type = line.SQUARE;\n    line.start(context.currentTime);\n    line.frequency.setValueAtTime(0, context.currentTime + 1 / (4 * f));\n    return line;\n  };\n\n  generateLine = function() {\n    var line;\n    line = context.createScriptProcessor(1024, 0, 1);\n    line.onaudioprocess = function(_arg) {\n      var data, length, n, outputBuffer, _results;\n      outputBuffer = _arg.outputBuffer;\n      n = 0;\n      length = outputBuffer.length;\n      data = outputBuffer.getChannelData(0);\n      _results = [];\n      while (n < length) {\n        data[n] = 1;\n        _results.push(n += 1);\n      }\n      return _results;\n    };\n    return line;\n  };\n\n  generateLine = function() {\n    var buffer, channels, data, line, size, _i, _results;\n    size = 4096;\n    channels = 1;\n    buffer = context.createBuffer(channels, size, context.sampleRate);\n    data = buffer.getChannelData(0);\n    (function() {\n      _results = [];\n      for (var _i = 0; 0 <= size ? _i < size : _i > size; 0 <= size ? _i++ : _i--){ _results.push(_i); }\n      return _results;\n    }).apply(this).forEach(function(i) {\n      return data[i] = 1;\n    });\n    line = context.createBufferSource();\n    line.buffer = buffer;\n    line.loop = true;\n    line.start(0);\n    return line;\n  };\n\n  generateLine3 = function() {\n    var imag, line, real, size, wave;\n    size = 2;\n    real = new Float32Array(size);\n    imag = new Float32Array(size);\n    real[0] = 2.828;\n    wave = context.createPeriodicWave(real, imag);\n    line = context.createOscillator();\n    line.setPeriodicWave(wave);\n    line.start(0);\n    return line;\n  };\n\n}).call(this);\n\n//# sourceURL=osc_bank.coffee",
+    "setup": {
+      "path": "setup",
+      "content": "(function() {\n  var applyStyleSheet;\n\n  global.AudioContext = global.AudioContext || global.webkitAudioContext;\n\n  require(\"appcache\");\n\n  applyStyleSheet = function() {\n    var styleNode;\n    styleNode = document.createElement(\"style\");\n    styleNode.innerHTML = require(\"./style\");\n    return document.head.appendChild(styleNode);\n  };\n\n  applyStyleSheet();\n\n}).call(this);\n",
       "type": "blob"
     },
     "style": {
       "path": "style",
       "content": "module.exports = \"* {\\n  -ms-box-sizing: border-box;\\n  -moz-box-sizing: border-box;\\n  -webkit-box-sizing: border-box;\\n  box-sizing: border-box;\\n}\\n\\nhtml {\\n  height: 100%;\\n}\\n\\nbody {\\n  font-family: \\\"HelveticaNeue-Light\\\", \\\"Helvetica Neue Light\\\", \\\"Helvetica Neue\\\", Helvetica, Arial, \\\"Lucida Grande\\\", sans-serif;\\n  font-weight: 300;\\n  font-size: 18px;\\n  height: 100%;\\n  margin: 0;\\n  overflow: hidden;\\n  -ms-user-select: none;\\n  -moz-user-select: none;\\n  -webkit-user-select: none;\\n  user-select: none;\\n}\\n\\n.center {\\n  bottom: 0;\\n  position: absolute;\\n  top: 0;\\n  left: 0;\\n  right: 0;\\n  margin: auto;\\n}\";",
+      "type": "blob"
+    },
+    "lib/viz": {
+      "path": "lib/viz",
+      "content": "(function() {\n  module.exports = function(analyser) {\n    var frequencyDomain, timeDomain;\n    frequencyDomain = new Uint8Array(analyser.frequencyBinCount);\n    timeDomain = new Uint8Array(analyser.frequencyBinCount);\n    return {\n      draw: function(canvas) {\n        var ratio;\n        canvas.fill(\"black\");\n        analyser.getByteFrequencyData(frequencyDomain);\n        analyser.getByteTimeDomainData(timeDomain);\n        ratio = canvas.height() / 255;\n        Array.prototype.forEach.call(frequencyDomain, function(value, index) {\n          return canvas.drawRect({\n            x: index,\n            y: ratio * (255 - value),\n            width: 1,\n            height: ratio * value,\n            color: \"blue\"\n          });\n        });\n        return Array.prototype.forEach.call(timeDomain, function(value, index) {\n          return canvas.drawCircle({\n            x: index,\n            y: ratio * (255 - value),\n            radius: 1,\n            color: \"red\"\n          });\n        });\n      }\n    };\n  };\n\n}).call(this);\n",
       "type": "blob"
     }
   },
@@ -95,8 +269,8 @@
     "owner": {
       "login": "distri",
       "id": 6005125,
-      "avatar_url": "https://identicons.github.com/f90c81ffc1498e260c820082f2e7ca5f.png",
-      "gravatar_id": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/6005125?",
+      "gravatar_id": "192f3f168409e79c42107f081139d9f3",
       "url": "https://api.github.com/users/distri",
       "html_url": "https://github.com/distri",
       "followers_url": "https://api.github.com/users/distri/followers",
@@ -152,26 +326,26 @@
     "labels_url": "https://api.github.com/repos/distri/synth/labels{/name}",
     "releases_url": "https://api.github.com/repos/distri/synth/releases{/id}",
     "created_at": "2014-02-23T23:38:03Z",
-    "updated_at": "2014-02-23T23:38:03Z",
-    "pushed_at": "2014-02-23T23:38:03Z",
+    "updated_at": "2014-02-27T15:49:13Z",
+    "pushed_at": "2014-02-27T15:49:12Z",
     "git_url": "git://github.com/distri/synth.git",
     "ssh_url": "git@github.com:distri/synth.git",
     "clone_url": "https://github.com/distri/synth.git",
     "svn_url": "https://github.com/distri/synth",
     "homepage": null,
-    "size": 0,
-    "stargazers_count": 0,
-    "watchers_count": 0,
-    "language": null,
+    "size": 354,
+    "stargazers_count": 1,
+    "watchers_count": 1,
+    "language": "CSS",
     "has_issues": true,
     "has_downloads": true,
     "has_wiki": true,
-    "forks_count": 0,
+    "forks_count": 1,
     "mirror_url": null,
     "open_issues_count": 0,
-    "forks": 0,
+    "forks": 1,
     "open_issues": 0,
-    "watchers": 0,
+    "watchers": 1,
     "default_branch": "master",
     "master_branch": "master",
     "permissions": {
@@ -182,8 +356,8 @@
     "organization": {
       "login": "distri",
       "id": 6005125,
-      "avatar_url": "https://identicons.github.com/f90c81ffc1498e260c820082f2e7ca5f.png",
-      "gravatar_id": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/6005125?",
+      "gravatar_id": "192f3f168409e79c42107f081139d9f3",
       "url": "https://api.github.com/users/distri",
       "html_url": "https://github.com/distri",
       "followers_url": "https://api.github.com/users/distri/followers",
@@ -198,10 +372,10 @@
       "type": "Organization",
       "site_admin": false
     },
-    "network_count": 0,
+    "network_count": 1,
     "subscribers_count": 2,
     "branch": "master",
-    "defaultBranch": "master"
+    "publishBranch": "gh-pages"
   },
   "dependencies": {
     "appcache": {
