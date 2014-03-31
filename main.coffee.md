@@ -14,6 +14,7 @@ Synth
 Synthesizing sound using web audio and crying about it.
 
     require "./setup"
+    Viz = require "./lib/viz"
     LFO = require "./lfo"
     Bank = require "./osc_bank"
     {pow} = Math
@@ -86,36 +87,14 @@ Synthesizing sound using web audio and crying about it.
 
     handleResize()
     window.addEventListener "resize", handleResize, false
-
+    
     analyser = context.createAnalyser()
     analyser.smoothingTimeConstant = 0
-
+  
     masterGain.connect(analyser)
 
-    frequencyDomain = new Uint8Array(analyser.frequencyBinCount)
-    timeDomain = new Uint8Array(analyser.frequencyBinCount)
+    viz = Viz(analyser)
 
     setInterval ->
-      canvas.fill "black"
-
-      analyser.getByteFrequencyData(frequencyDomain)
-      analyser.getByteTimeDomainData(timeDomain)
-
-      # Draw waveforms or frequency spectrum
-      ratio = canvas.height() / 255
-      Array::forEach.call frequencyDomain, (value, index) ->
-        canvas.drawRect
-          x: index
-          y: ratio * (255 - value)
-          width: 1
-          height: ratio * value
-          color: "blue"
-
-      Array::forEach.call timeDomain, (value, index) ->
-        canvas.drawCircle
-          x: index
-          y: ratio * (255 - value)
-          radius: 1
-          color: "red"
-
+      viz.draw(canvas)
     , 1000/60
