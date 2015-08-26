@@ -15,25 +15,30 @@ Audio Viz
         width = canvas.width()
         height = canvas.height()
         ctx = canvas.context()
+        ratio = height / 256
         step = width / bins
 
+        ctx.fillStyle = "#00F"
+
+        ctx.beginPath()
+        ctx.moveTo(0, height)
+
         # Draw waveforms or frequency spectrum
-        ratio = canvas.height() / 255
         Array::forEach.call frequencyDomain, (value, index) ->
-          canvas.drawRect
-            x: index
-            y: ratio * (255 - value)
-            width: 1
-            height: ratio * value
-            color: "blue"
+          x = index * step
+          y = ratio * (256 - value)
+
+          ctx.lineTo x, y
+
+        ctx.lineTo(width, height)
+        ctx.fill()
 
         ctx.lineWidth = 2
         ctx.strokeStyle = "#F00"
 
         Array::forEach.call timeDomain, (value, index) ->
-          v = (value - 128) / 128
           x = index * step
-          y = (1 + v) * (height/2)
+          y = ratio * (256 - value)
 
           if index is 0
             ctx.beginPath()
