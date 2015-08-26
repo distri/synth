@@ -56,7 +56,7 @@ Return an 'oscillator' that emits a constant stream of 1s
     generateLine = ->
       # Most of this is a hack to get a constant 'voltage' line of 1
       # Phase offset a sine wave by 1/4 and lock it to zero frequency
-      
+
       f = 110
       line = context.createOscillator()
       line.frequency.value = f

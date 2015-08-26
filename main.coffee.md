@@ -70,8 +70,13 @@ Synthesizing sound using web audio and crying about it.
       initIOS()
 
       {frequency, gain} = oscs[identifier]
+      
+      f = x * tones * octaves
 
-      frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)))
+      if false # Clamp to semitones
+        f = Math.floor(f)
+
+      frequency.value = freq(octaves * ( f / (tones * octaves)))
       gain.value = 1 - y
 
     canvas.on "touch", handler
@@ -87,10 +92,10 @@ Synthesizing sound using web audio and crying about it.
 
     handleResize()
     window.addEventListener "resize", handleResize, false
-    
+
     analyser = context.createAnalyser()
     analyser.smoothingTimeConstant = 0
-  
+
     masterGain.connect(analyser)
 
     viz = Viz(analyser)

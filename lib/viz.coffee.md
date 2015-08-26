@@ -2,14 +2,20 @@ Audio Viz
 =========
 
     module.exports = (analyser) ->
-      frequencyDomain = new Uint8Array(analyser.frequencyBinCount)
-      timeDomain = new Uint8Array(analyser.frequencyBinCount)
+      bins = analyser.frequencyBinCount
+      frequencyDomain = new Uint8Array(bins)
+      timeDomain = new Uint8Array(bins)
 
       draw: (canvas) ->
-        canvas.fill "black"
-
         analyser.getByteFrequencyData(frequencyDomain)
         analyser.getByteTimeDomainData(timeDomain)
+
+        canvas.fill "black"
+
+        width = canvas.width()
+        height = canvas.height()
+        ctx = canvas.context()
+        step = width / bins
 
         # Draw waveforms or frequency spectrum
         ratio = canvas.height() / 255
@@ -21,9 +27,18 @@ Audio Viz
             height: ratio * value
             color: "blue"
 
+        ctx.lineWidth = 2
+        ctx.strokeStyle = "#F00"
+
         Array::forEach.call timeDomain, (value, index) ->
-          canvas.drawCircle
-            x: index
-            y: ratio * (255 - value)
-            radius: 1
-            color: "red"
+          v = (value - 128) / 128
+          x = index * step
+          y = (1 + v) * (height/2)
+
+          if index is 0
+            ctx.beginPath()
+            ctx.moveTo x, y
+          else
+            ctx.lineTo x, y
+
+        ctx.stroke()
