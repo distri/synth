@@ -48,25 +48,30 @@
     width = canvas.width()
     height = canvas.height()
     ctx = canvas.context()
+    ratio = height / <span class="number">256</span>
     step = width / bins
 
+    ctx.fillStyle = <span class="string">"#00F"</span>
+
+    ctx.beginPath()
+    ctx.moveTo(<span class="number">0</span>, height)
+
     <span class="comment"># Draw waveforms or frequency spectrum</span>
-    ratio = canvas.height() / <span class="number">255</span>
     Array::forEach.call frequencyDomain, (value, index) -&gt;
-      canvas.drawRect
-        x: index
-        y: ratio * (<span class="number">255</span> - value)
-        width: <span class="number">1</span>
-        height: ratio * value
-        color: <span class="string">"blue"</span>
+      x = index * step
+      y = ratio * (<span class="number">256</span> - value)
+
+      ctx.lineTo x, y
+
+    ctx.lineTo(width, height)
+    ctx.fill()
 
     ctx.lineWidth = <span class="number">2</span>
     ctx.strokeStyle = <span class="string">"#F00"</span>
 
     Array::forEach.call timeDomain, (value, index) -&gt;
-      v = (value - <span class="number">128</span>) / <span class="number">128</span>
       x = index * step
-      y = (<span class="number">1</span> + v) * (height/<span class="number">2</span>)
+      y = ratio * (<span class="number">256</span> - value)
 
       <span class="keyword">if</span> index <span class="keyword">is</span> <span class="number">0</span>
         ctx.beginPath()
