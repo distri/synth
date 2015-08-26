@@ -6,7 +6,7 @@ LFO Testing
       lfo.frequency.value = frequency
       lfo.type = lfo.SINE
       lfo.start(0)
-  
+
       lfoGain = context.createGain()
       lfoGain.gain.value = amplitude
 

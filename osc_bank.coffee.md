@@ -3,6 +3,9 @@ OSC Bank
 
 A bank of oscillators
 
+    OVERTONES = [1, 2, 7]
+    DETUNES = [-7, 0, 6]
+
 A single frequency input controls all harmonics.
 
     module.exports = ->
@@ -16,7 +19,7 @@ A single frequency input controls all harmonics.
       out = context.createGain()
       out.gain.value = 1
 
-      [1, 2, 7].map (n, i) ->
+      OVERTONES.map (n, i) ->
         overtone = context.createGain()
         overtone.gain.value = n
 
@@ -26,7 +29,7 @@ A single frequency input controls all harmonics.
         gain.gain.value = 1 / Math.pow(2, i + 1)
         gain.connect(out)
 
-        [-5, 0, 5].map (n) ->
+        DETUNES.map (n) ->
           osc = context.createOscillator()
           osc.frequency.value = 0
           osc.type = 'triangle'
