@@ -79,13 +79,13 @@ oscs = [<span class="number">0.</span><span class="number">.5</span>].map -&gt;
   vca.connect(masterGain)
 
   <span class="comment"># FM Effect</span>
-  <span class="comment"># LFO(vco.frequency, 61, 1000)</span>
+  <span class="comment"># LFO(vco.frequency, 3, 440)</span>
 
   <span class="comment"># Vibrato Effect</span>
   LFO(vco.frequency, <span class="number">5</span>, <span class="number">10</span>)
 
   <span class="comment"># Tremolo Effect</span>
-  <span class="comment"># LFO(masterGain.gain, 5, 0.005)</span>
+  <span class="comment"># LFO(masterGain.gain, 6, 0.005)</span>
 
   frequency: vco.frequency
   gain: vca.gain
