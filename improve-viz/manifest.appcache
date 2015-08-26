@@ -1,0 +1,12 @@
+CACHE MANIFEST
+# 1440559773870
+
+CACHE:
+index.html
+../improve-viz.json.js
+
+
+NETWORK:
+https://*
+http://*
+*
