@@ -37,13 +37,13 @@ Synthesizing sound using web audio and crying about it.
       vca.connect(masterGain)
 
       # FM Effect
-      # LFO(vco.frequency, 61, 1000)
+      # LFO(vco.frequency, 3, 440)
       
       # Vibrato Effect
       LFO(vco.frequency, 5, 10)
 
       # Tremolo Effect
-      # LFO(masterGain.gain, 5, 0.005)
+      # LFO(masterGain.gain, 6, 0.005)
 
       frequency: vco.frequency
       gain: vca.gain
