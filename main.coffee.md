@@ -36,17 +36,18 @@ Synthesizing sound using web audio and crying about it.
       vco.connect(vca)
       vca.connect(masterGain)
 
+      # FM Effect
+      # LFO(vco.frequency, 3, 440)
+      
+      # Vibrato Effect
+      LFO(vco.frequency, 5, 10)
+
+      # Tremolo Effect
+      # LFO(masterGain.gain, 6, 0.005)
+
       frequency: vco.frequency
       gain: vca.gain
 
-    # FM Effect
-    # LFO(vco.frequency, 61, 1000)
-
-    # Vibrato Effect
-    # LFO(vco.frequency, 7, 10)
-
-    # Tremolo Effect
-    # LFO(masterGain.gain, 10, 0.01)
 
     freq = (x) ->
       110 * pow(2, x)
@@ -70,8 +71,13 @@ Synthesizing sound using web audio and crying about it.
       initIOS()
 
       {frequency, gain} = oscs[identifier]
+      
+      f = x * tones * octaves
 
-      frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)))
+      if false # Clamp to semitones
+        f = Math.floor(f)
+
+      frequency.value = freq(octaves * ( f / (tones * octaves)))
       gain.value = 1 - y
 
     canvas.on "touch", handler
@@ -87,10 +93,10 @@ Synthesizing sound using web audio and crying about it.
 
     handleResize()
     window.addEventListener "resize", handleResize, false
-    
+
     analyser = context.createAnalyser()
     analyser.smoothingTimeConstant = 0
-  
+
     masterGain.connect(analyser)
 
     viz = Viz(analyser)
