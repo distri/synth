@@ -78,17 +78,18 @@ oscs = [<span class="number">0.</span><span class="number">.5</span>].map -&gt;
   vco.connect(vca)
   vca.connect(masterGain)
 
+  <span class="comment"># FM Effect</span>
+  <span class="comment"># LFO(vco.frequency, 3, 440)</span>
+
+  <span class="comment"># Vibrato Effect</span>
+  LFO(vco.frequency, <span class="number">5</span>, <span class="number">10</span>)
+
+  <span class="comment"># Tremolo Effect</span>
+  <span class="comment"># LFO(masterGain.gain, 6, 0.005)</span>
+
   frequency: vco.frequency
   gain: vca.gain
 
-<span class="comment"># FM Effect</span>
-<span class="comment"># LFO(vco.frequency, 61, 1000)</span>
-
-<span class="comment"># Vibrato Effect</span>
-<span class="comment"># LFO(vco.frequency, 7, 10)</span>
-
-<span class="comment"># Tremolo Effect</span>
-<span class="comment"># LFO(masterGain.gain, 10, 0.01)</span>
 
 <span class="function"><span class="title">freq</span></span> = (x) -&gt;
   <span class="number">110</span> * pow(<span class="number">2</span>, x)
@@ -113,7 +114,12 @@ tones = <span class="number">12</span>
 
   {frequency, gain} = oscs[identifier]
 
-  frequency.value = freq(octaves * (Math.floor(x * tones * octaves) / (tones * octaves)))
+  f = x * tones * octaves
+
+  <span class="keyword">if</span> <span class="literal">false</span> <span class="comment"># Clamp to semitones</span>
+    f = Math.floor(f)
+
+  frequency.value = freq(octaves * ( f / (tones * octaves)))
   gain.value = <span class="number">1</span> - y
 
 canvas.<span class="literal">on</span> <span class="string">"touch"</span>, handler
